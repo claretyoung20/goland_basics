@@ -3,7 +3,6 @@ package main
 import (
 	"booking_app/helper"
 	"fmt"
-	"strconv"
 )
 
 const (
@@ -11,8 +10,9 @@ const (
 	conferenceName    = "Go Conference"
 )
 
+
 var remainingTickets uint = conferenceTickets
-var bookings = make([]map[string]string, 0)
+var bookings = make([]UserData, 0)
 
 
 func main() {
@@ -43,12 +43,13 @@ func main() {
 
 func bookTicket(firstName, lastName string, userTickets uint, email string) {
 	
-	var userData = make(map[string]string)
-	userData["firstName"] = firstName
-	userData["lastName"] = lastName
-	userData["email"] = email
-	userData["numberOfTickets"] = strconv.FormatUint(uint64(userTickets), 10)
-	// userData["tickets"] = fmt.Sprintf("%d", userTickets)
+	var userData =UserData{
+		firstName: firstName,
+        lastName: lastName,
+        email: email,
+        numberOfTickets: userTickets,
+	}
+	
 
 	bookings = append(bookings, userData)
 	remainingTickets -= userTickets
@@ -98,12 +99,12 @@ func printValidationErrors(isValidEmail, isValidTicketNumber, isValidName bool) 
 	}
 }
 
-func printBookings(bookings []map[string]string) {
-	fmt.Println("These are all bookings:")
-	for _, booking := range bookings {
-		fmt.Printf("%v\n", booking)
-	}
-	
+func printBookings(bookings []UserData) {
+	if len(bookings) == 0 {
+        fmt.Println("There are no bookings.")
+        return
+    }
+	fmt.Printf("These are all bookings: %v \n\n", bookings)
 }
 
 func greetUser() {
