@@ -3,6 +3,8 @@ package main
 import (
 	"booking_app/helper"
 	"fmt"
+	"sync"
+	"time"
 )
 
 const (
@@ -10,10 +12,10 @@ const (
 	conferenceName    = "Go Conference"
 )
 
-
 var remainingTickets uint = conferenceTickets
 var bookings = make([]UserData, 0)
 
+var waitGroup = sync.WaitGroup{}
 
 func main() {
 	fmt.Println(helper.MyVariable)
@@ -27,7 +29,19 @@ func main() {
 			firstName, lastName, userTickets, email, remainingTickets)
 
 		if isValidTicketNumber && isValidName && isValidEmail {
-			bookTicket(firstName, lastName, userTickets, email)
+
+			var userData = UserData{
+				firstName:       firstName,
+				lastName:        lastName,
+				email:           email,
+				numberOfTickets: userTickets,
+			}
+
+			bookTicket(userData)
+
+			waitGroup.Add(1)
+			go sendTicket(userData)
+
 			if remainingTickets == 0 {
 				fmt.Printf("Our %s conference is booked out. Come back next year!\n", conferenceName)
 				break
@@ -39,22 +53,17 @@ func main() {
 	}
 
 	printBookings(bookings)
+
+	waitGroup.Wait()
 }
 
-func bookTicket(firstName, lastName string, userTickets uint, email string) {
-	
-	var userData =UserData{
-		firstName: firstName,
-        lastName: lastName,
-        email: email,
-        numberOfTickets: userTickets,
-	}
-	
+func bookTicket(userData UserData) {
 
 	bookings = append(bookings, userData)
-	remainingTickets -= userTickets
+	remainingTickets -= userData.numberOfTickets
 
-	fmt.Printf("Thank you %s %s for booking %d tickets. You will receive a confirmation email at %s\n", firstName, lastName, userTickets, email)
+	fmt.Printf("Thank you %s %s for booking %d tickets. You will receive a confirmation email at %s\n", 
+	userData.firstName, userData.lastName, userData.numberOfTickets, userData.email)
 	fmt.Printf("%d tickets are left for %s\n", remainingTickets, conferenceName)
 }
 
@@ -101,9 +110,9 @@ func printValidationErrors(isValidEmail, isValidTicketNumber, isValidName bool) 
 
 func printBookings(bookings []UserData) {
 	if len(bookings) == 0 {
-        fmt.Println("There are no bookings.")
-        return
-    }
+		fmt.Println("There are no bookings.")
+		return
+	}
 	fmt.Printf("These are all bookings: %v \n\n", bookings)
 }
 
@@ -114,5 +123,12 @@ func greetUser() {
 	fmt.Println("Get your ticket here to attend.")
 }
 
-
-
+func sendTicket(userData UserData) {
+	time.Sleep(10 * time.Second) // simulate delay
+	var userTicket = fmt.Sprintf("%v ticket for user: %v %v",
+	userData.numberOfTickets, userData.firstName, userData.lastName)
+	fmt.Println("################################")
+	fmt.Printf("Sending ticket:\n to %v \n to email address: %v\n", userTicket, userData.email)
+	fmt.Println("################################")
+	waitGroup.Done()
+}
