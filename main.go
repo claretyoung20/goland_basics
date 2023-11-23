@@ -1,9 +1,9 @@
 package main
 
 import (
+	"booking_app/helper"
 	"fmt"
-	"regexp"
-	"strings"
+	"strconv"
 )
 
 const (
@@ -12,16 +12,19 @@ const (
 )
 
 var remainingTickets uint = conferenceTickets
-var bookings = []string{}
+var bookings = make([]map[string]string, 0)
+
 
 func main() {
+	fmt.Println(helper.MyVariable)
 
 	greetUser()
 
 	for remainingTickets > 0 && len(bookings) < conferenceTickets {
 		firstName, lastName, email, userTickets := getUserInput()
 
-		isValidName, isValidTicketNumber, isValidEmail := validateUserInput(firstName, lastName, userTickets, email)
+		isValidName, isValidTicketNumber, isValidEmail := helper.ValidateUserInput(
+			firstName, lastName, userTickets, email, remainingTickets)
 
 		if isValidTicketNumber && isValidName && isValidEmail {
 			bookTicket(firstName, lastName, userTickets, email)
@@ -35,11 +38,19 @@ func main() {
 		}
 	}
 
-	printBookingsByFirstNames(bookings)
+	printBookings(bookings)
 }
 
 func bookTicket(firstName, lastName string, userTickets uint, email string) {
-	bookings = append(bookings, fmt.Sprintf("%s %s", firstName, lastName))
+	
+	var userData = make(map[string]string)
+	userData["firstName"] = firstName
+	userData["lastName"] = lastName
+	userData["email"] = email
+	userData["numberOfTickets"] = strconv.FormatUint(uint64(userTickets), 10)
+	// userData["tickets"] = fmt.Sprintf("%d", userTickets)
+
+	bookings = append(bookings, userData)
 	remainingTickets -= userTickets
 
 	fmt.Printf("Thank you %s %s for booking %d tickets. You will receive a confirmation email at %s\n", firstName, lastName, userTickets, email)
@@ -75,15 +86,6 @@ func getTicketNumber() uint {
 	return userTickets
 }
 
-
-func validateUserInput(firstName, lastName string, userTickets uint, email string) (bool, bool, bool) {
-	isValidName := len(firstName) >= 2 && len(lastName) >= 2
-	isValidTicketNumber := userTickets > 0 && userTickets <= remainingTickets
-	isValidEmail := isValidEmail(email)
-
-	return isValidName, isValidTicketNumber, isValidEmail
-}
-
 func printValidationErrors(isValidEmail, isValidTicketNumber, isValidName bool) {
 	if !isValidEmail {
 		fmt.Println("Please provide a valid email.")
@@ -96,13 +98,12 @@ func printValidationErrors(isValidEmail, isValidTicketNumber, isValidName bool) 
 	}
 }
 
-func printBookingsByFirstNames(bookings []string) {
-	firstNames := make([]string, len(bookings))
-	for i, booking := range bookings {
-		names := strings.Fields(booking)
-		firstNames[i] = names[0]
+func printBookings(bookings []map[string]string) {
+	fmt.Println("These are all bookings:")
+	for _, booking := range bookings {
+		fmt.Printf("%v\n", booking)
 	}
-	fmt.Printf("These are all bookings: %v\n", firstNames)
+	
 }
 
 func greetUser() {
@@ -112,9 +113,5 @@ func greetUser() {
 	fmt.Println("Get your ticket here to attend.")
 }
 
-func isValidEmail(email string) bool {
-	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	re := regexp.MustCompile(emailRegex)
-	return re.MatchString(email)
-}
+
 
