@@ -3,8 +3,7 @@ package main
 import (
 	"booking_app/helper"
 	"fmt"
-	"sync"
-	"time"
+	"encoding/json"
 )
 
 const (
@@ -15,12 +14,12 @@ const (
 var remainingTickets uint = conferenceTickets
 var bookings = make([]UserData, 0)
 
-var waitGroup = sync.WaitGroup{}
 
 func main() {
 	fmt.Println(helper.MyVariable)
 
 	greetUser()
+
 
 	for remainingTickets > 0 && len(bookings) < conferenceTickets {
 		firstName, lastName, email, userTickets := getUserInput()
@@ -31,16 +30,13 @@ func main() {
 		if isValidTicketNumber && isValidName && isValidEmail {
 
 			var userData = UserData{
-				firstName:       firstName,
-				lastName:        lastName,
-				email:           email,
-				numberOfTickets: userTickets,
+				FirstName:       firstName,
+				LastName:        lastName,
+				Email:           email,
+				NumberOfTickets: userTickets,
 			}
 
 			bookTicket(userData)
-
-			waitGroup.Add(1)
-			go sendTicket(userData)
 
 			if remainingTickets == 0 {
 				fmt.Printf("Our %s conference is booked out. Come back next year!\n", conferenceName)
@@ -54,20 +50,20 @@ func main() {
 
 	printBookings(bookings)
 
-	waitGroup.Wait()
 }
 
 func bookTicket(userData UserData) {
 
 	bookings = append(bookings, userData)
-	remainingTickets -= userData.numberOfTickets
+	remainingTickets -= userData.NumberOfTickets
 
 	fmt.Printf("Thank you %s %s for booking %d tickets. You will receive a confirmation email at %s\n", 
-	userData.firstName, userData.lastName, userData.numberOfTickets, userData.email)
+	userData.FirstName, userData.LastName, userData.NumberOfTickets, userData.Email)
 	fmt.Printf("%d tickets are left for %s\n", remainingTickets, conferenceName)
 }
 
 func getUserInput() (string, string, string, uint) {
+	
 	var firstName, lastName, email string
 
 	userTickets := getTicketNumber()
@@ -113,6 +109,8 @@ func printBookings(bookings []UserData) {
 		fmt.Println("There are no bookings.")
 		return
 	}
+	value, _ := json.Marshal(bookings)
+    fmt.Println(string(value))
 	fmt.Printf("These are all bookings: %v \n\n", bookings)
 }
 
@@ -124,11 +122,9 @@ func greetUser() {
 }
 
 func sendTicket(userData UserData) {
-	time.Sleep(10 * time.Second) // simulate delay
 	var userTicket = fmt.Sprintf("%v ticket for user: %v %v",
-	userData.numberOfTickets, userData.firstName, userData.lastName)
+	userData.NumberOfTickets, userData.FirstName, userData.LastName)
 	fmt.Println("################################")
-	fmt.Printf("Sending ticket:\n to %v \n to email address: %v\n", userTicket, userData.email)
+	fmt.Printf("Sending ticket:\n to %v \n to email address: %v\n", userTicket, userData.Email)
 	fmt.Println("################################")
-	waitGroup.Done()
 }
